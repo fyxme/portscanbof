@@ -6,8 +6,6 @@ A pingscanner BOF that perform an ICMP ping scan on target input.
 
 For more information about design considerations and OPSEC notes, BLOG TBD.
 
-**OPSEC note:** Some OPSEC considerations have been incorporated into the tool. Nevertheless, needs further improvements, test in a Lab environment before using in PROD.
-
 ## Usage
 
 To run the BOFs use the following commands:
@@ -93,3 +91,8 @@ Reply from 10.10.121.112: bytes=32 time=2ms TTL=128
 ```
 make
 ```
+
+## OPSEC
+
+Some OPSEC considerations have been incorporated into the tool. Nevertheless, needs further improvements, test in a Lab environment before using in PROD.
+
