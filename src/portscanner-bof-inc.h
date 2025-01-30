@@ -70,6 +70,12 @@ WINBASEAPI  size_t      __cdecl     MSVCRT$mbstowcs (wchar_t*, const char*, size
 #define mbstowcs MSVCRT$mbstowcs
 
 
+WINBASEAPI int WINAPI WS2_32$WSAPoll(WSAPOLLFD *fd,int x, int timeout);
+#define WSAPoll WS2_32$WSAPoll
+WINBASEAPI int WINAPI WS2_32$getpeername(SOCKET s,struct sockaddr *name, int *namelen);
+#define getpeername WS2_32$getpeername
+WINBASEAPI int WINAPI WS2_32$ntohs(u_short netshort);
+#define ntohs WS2_32$ntohs
 
 void internal_printf(const char* format, ...);
 
