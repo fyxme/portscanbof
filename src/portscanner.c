@@ -33,135 +33,8 @@
 #define CONN_TIMEOUT 100
 #define READ_TIMEOUT 500
 
-int isPortOpen(char *target, int port) {
 
-    SOCKET sock = INVALID_SOCKET;
-    struct sockaddr_in server;
-    char buffer[1024];
-    int result;
-
-    // connect timeout
-    int ctimeout = 5000; // Timeout in milliseconds (5 seconds)
-    fd_set writefds;
-    fd_set readfds;
-    struct timeval tv;
-
-    sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    if (sock == INVALID_SOCKET) {
-        fprintf(stderr, "Socket creation failed: %d\n", WSAGetLastError());
-        return 0;
-    }
-
-    // receive timeout
-    DWORD timeout = 1000; // ms
-    if(setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof timeout)) {
-        printf("setsockopt failed: %d\n", WSAGetLastError());
-        closesocket(sock);
-        return 0;
-    }
-
-    if(setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (const char*)&timeout, sizeof timeout)) {
-        printf("setsockopt failed: %d\n", WSAGetLastError());
-        closesocket(sock);
-        return 0;
-    }
-
-    // set socket to non-blocking mode
-    u_long mode = 1;
-    if (ioctlsocket(sock, FIONBIO, &mode) != NO_ERROR) {
-        printf("ioctlsocket failed: %d\n", WSAGetLastError());
-        closesocket(sock);
-        return 0;
-    }
-
-    struct in_addr addr;
-    addr.s_addr = inet_addr(target); // Convert string to in_addr
-
-    server.sin_family = AF_INET;
-    server.sin_port = htons(port);
-
-    // basically convert struct in_addr type to struct sockaddr_in type
-    memcpy(&server.sin_addr, &addr, sizeof(server.sin_addr));
-
-    // TODO: https://stackoverflow.com/questions/29358443/c-using-select-to-monitor-two-sockets
-    // Connect to the server
-    if (connect(sock, (struct sockaddr *)&server, sizeof(server)) == SOCKET_ERROR) {
-        if (WSAGetLastError() == WSAEWOULDBLOCK) {
-            // Use select to wait for the connection
-            FD_ZERO(&writefds);
-            FD_ZERO(&readfds);
-            FD_SET(sock, &writefds);
-            FD_SET(sock, &readfds);
-            tv.tv_sec = ctimeout / 1000;
-            tv.tv_usec = (ctimeout % 1000) * 1000;
-
-            // writefds will be available first 
-            // readfds may timeout if no data is sent by the socket even if it connected
-            //int result = select(0, NULL, &writefds, NULL, &tv);
-            int result = select(sock+1, &readfds, &writefds, NULL, &tv);
-            //int result = select(sock+1, &writefds, NULL, NULL, &tv);
-            printf("isset %d %d\n", FD_ISSET(sock, &readfds), FD_ISSET(sock, &writefds));
-            if (!(result > 0 && FD_ISSET(sock, &writefds))) {
-                //printf("Connect timed out or failed: %d\n", WSAGetLastError());
-                closesocket(sock);
-                return 1;
-            }
-        } else {
-            //fprintf(stderr, "Could not connect to %s on port %d: %d\n", target, port, WSAGetLastError());
-            closesocket(sock);
-            return 1;
-        }
-    }
-    
-    // Set back to blocking mode 
-    // needed so we can receive on the socket
-    //mode = 0;
-    //ioctlsocket(sock, FIONBIO, &mode);
-
-
-    // Receive and print the response
-    while((result = recv(sock, buffer, sizeof(buffer) - 1, 0)) == -1 
-        && WSAGetLastError() == WSAEWOULDBLOCK) {
-        FD_ZERO(&writefds);
-        FD_SET(sock, &writefds);
-        tv.tv_sec = ctimeout / 1000;
-        tv.tv_usec = (ctimeout % 1000) * 1000;
-
-        int result2 = select(0, &writefds, NULL, NULL, &tv);
-        break;
-        if (!(result2 > 0 && FD_ISSET(sock, &writefds))) {
-            break;
-        }
-    }
-
-    if (result > 0) {
-        buffer[result] = '\0'; // Null-terminate the received data
-    } else {
-        *buffer = '\0';
-    }
-
-    WCHAR  wtarget[256];
-    const size_t WCHARBUF = strlen(target)+1;
-    mbstowcs(wtarget, target, WCHARBUF);
-    
-    // if port == 445 and we got no header, assume its smb and request workstation info
-    if (port == 445 && result <= 0) get_server_info(wtarget, buffer);
-    
-    trimws(buffer);
-
-    if (strlen(buffer))
-        printf("%s:%d (%s)\n", target, port, buffer);
-    else
-        printf("%s:%d\n",target, port);
-
-    closesocket(sock);
-
-    return 1;
-}
-
-
-
-void connectOrTimeout2(SOCKET *sockets, int socket_count) {
+void connectOrTimeout(SOCKET *sockets, int socket_count) {
     WSAPOLLFD pollFd[MAX_NUM_SOCKETS];
     int numSockets = socket_count;
     char buffer[BUFFER_LEN];
@@ -232,57 +105,6 @@ void connectOrTimeout2(SOCKET *sockets, int socket_count) {
     }
 }
 
-void connectOrTimeout(SOCKET *sockets, int socket_count) {
-    SOCKET max_sock = INVALID_SOCKET;
-    fd_set writefds;
-    fd_set originfds;
-    FD_ZERO(&writefds);
-    for(int i=0; i<socket_count; i++) {
-        FD_SET(sockets[i], &writefds);
-        if (max_sock == INVALID_SOCKET || max_sock < sockets[i]) {
-            max_sock = sockets[i];
-        }
-    }
-    originfds = writefds;
-
-    struct timeval tv;
-    int ctimeout = 250; // Timeout in milliseconds (5 seconds)
-    //
-    tv.tv_sec = ctimeout / 1000;
-    tv.tv_usec = (ctimeout % 1000) * 1000;
-    int c = 0;
-    int result;
-    while((result = select(0, NULL, &writefds, NULL, &tv)) != -1) {
-        if (result == 0) break; // timeout
-
-        printf("scount -> %d | result -> %d\n", socket_count, result);
-        for(int i=0; i<socket_count; i++) {
-            printf("isset %d\n", FD_ISSET(sockets[i], &writefds));
-            if (FD_ISSET(sockets[i], &originfds)) {
-                FD_CLR(sockets[i], &originfds);
-            }
-
-        }
-        writefds = originfds;
-    }
-    printf("F: scount -> %d | result -> %d\n", socket_count, result);
-    printf("error: %d\n", WSAGetLastError());
-}
-
-/*
-void processTCPSockets(SOCKET *sockets, int socket_count) {
-    // connect to socket and return only the ones that are open
-    fd_set writefds;
-    connectTCPSockets(sockets, socket_count, &writefds);
-    for(int i=0; i<socket_count; i++) {
-        if (FD_ISSET(sockets[i], &writefds)) {
-            printf("Sockets[%d] is set\n",i);
-        }
-        closesocket(sockets[i]);
-    }
-
-}*/
-
 int connectTCPSocket(SOCKET sock, char *target, int port) {
 
     struct in_addr addr;
@@ -295,8 +117,6 @@ int connectTCPSocket(SOCKET sock, char *target, int port) {
     // basically convert struct in_addr type to struct sockaddr_in type
     memcpy(&server.sin_addr, &addr, sizeof(server.sin_addr));
 
-    // TODO: https://stackoverflow.com/questions/29358443/c-using-select-to-monitor-two-sockets
-    // Connect to the server
     if (connect(sock, (struct sockaddr *)&server, sizeof(server)) == SOCKET_ERROR)
         return (WSAGetLastError() == WSAEWOULDBLOCK);
 
@@ -327,7 +147,7 @@ void closeAllSockets(SOCKET *sockets, int *socket_count) {
     *socket_count = 0;
 }
 
-void testPortsOnIp2(char* target, Prt* ports) {
+void testPortsOnIp(char* target, Prt* ports) {
     SOCKET sockets[MAX_NUM_SOCKETS]; 
     int socket_count = 0;
 
@@ -353,24 +173,14 @@ void testPortsOnIp2(char* target, Prt* ports) {
             socket_count++;
 
             if (socket_count != MAX_NUM_SOCKETS) continue;
-            connectOrTimeout2(sockets, socket_count);
+            connectOrTimeout(sockets, socket_count);
             // close sockets 
             closeAllSockets(sockets, &socket_count);
         }
 
     } while ((curr=curr->next) != NULL);
-    connectOrTimeout2(sockets, socket_count);
+    connectOrTimeout(sockets, socket_count);
     closeAllSockets(sockets, &socket_count);
-}
-
-void testPortsOnIp(char* target, Prt* ports) {
-    Prt* curr = ports;
-    do {
-
-        for(u_int i = curr->start; i <= curr->end; i++) 
-            isPortOpen(target, (int)i);
-
-    } while ((curr=curr->next) != NULL);
 }
 
 int portscan(char *targetsStr, char *portsStr) {
@@ -407,7 +217,7 @@ int portscan(char *targetsStr, char *portsStr) {
                 tmp.s_addr = htonl(i);
                 inet_ntop(AF_INET, &tmp, ipAddressStr, INET_ADDRSTRLEN);
 
-                testPortsOnIp2(ipAddressStr, ports);
+                testPortsOnIp(ipAddressStr, ports);
             }
         } else if (hcurr->type == HIT_IPHOST) {
 
@@ -426,7 +236,7 @@ int portscan(char *targetsStr, char *portsStr) {
 
                 inet_ntop(p->ai_family, addr, ipAddressStr, sizeof(ipAddressStr));
 
-                testPortsOnIp2(ipAddressStr, ports);
+                testPortsOnIp(ipAddressStr, ports);
             }
         }
     } while((hcurr = hcurr->next) != NULL);
