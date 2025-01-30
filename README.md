@@ -94,5 +94,7 @@ make
 
 ## OPSEC
 
+The timeouts have been `#defined` in the portscanner bof. Additionally, the number of concurrent sockets is also defined in `portscanner.c`
+
 Some OPSEC considerations have been incorporated into the tool. Nevertheless, needs further improvements, test in a Lab environment before using in PROD.
 
