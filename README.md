@@ -4,7 +4,7 @@ A portscanner BOF (COFF) that replicates [Cobalt Strikes Port Scanning](https://
 
 A pingscanner BOF that perform an ICMP ping scan on target input.
 
-For more information about design considerations and OPSEC notes, BLOG TBD.
+For more information about design considerations and OPSEC notes, see the following [blog](https://fyx.me/articles/replicating-cobalt-strikes-port-scanner-as-a-bof-for-open-source-c2-frameworks/).
 
 ## Usage
 
