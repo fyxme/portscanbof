@@ -16,7 +16,7 @@ pingscan [targets]
 
 The following options are supported:
 - `[targets]`: a comma separated list of hosts to scan (hostnames and IPs supported). Additionally, you can specify any IPv4 ranges and CIDR (eg. `192.168.1.128-192.168.2.240`, `192.168.1.0/24` )
-- `[ports]`: a
+- `[ports]`: a comma separated list of ports to scan (eg. "53,80,443,8000-8050")
 
 ### Cobalt Strike
 
