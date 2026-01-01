@@ -77,7 +77,9 @@ void connectOrTimeout(SOCKET *sockets, int socket_count) {
             // get ip and port
             struct sockaddr_in peerAddress;
             int peerAddressLen = sizeof(peerAddress);
-            getpeername(sockets[i], (struct sockaddr*)&peerAddress, &peerAddressLen);
+            if (getpeername(sockets[i], (struct sockaddr*)&peerAddress, &peerAddressLen) == SOCKET_ERROR) {
+                continue;
+            }
 
             char target[INET_ADDRSTRLEN];
             inet_ntop(AF_INET, &peerAddress.sin_addr, target, INET_ADDRSTRLEN);
