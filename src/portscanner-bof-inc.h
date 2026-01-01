@@ -34,6 +34,8 @@ WINBASEAPI u_short WINAPI WS2_32$htons(u_short hostshort);
 #define htons WS2_32$htons
 WINBASEAPI size_t __cdecl MSVCRT$strlen(const char *_Str);
 #define strlen MSVCRT$strlen
+WINBASEAPI char* __cdecl MSVCRT$_strdup(const char *_Str);
+#define strdup MSVCRT$_strdup
 DECLSPEC_IMPORT ULONG WINAPI WS2_32$ntohl(ULONG netlong);
 #define ntohl WS2_32$ntohl
 WINBASEAPI int __cdecl MSVCRT$sprintf(char *__stream, const char *__format, ...);

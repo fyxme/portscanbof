@@ -108,7 +108,7 @@ HstIPHost * generate_ips_from_iphost(char *input) {
     // freeaddrinfo(res); // we're keeping it cause we need it for later
     HstIPHost * ret = (HstIPHost *)malloc(sizeof(HstIPHost));
     ret->res = res;
-    ret->name = input;
+    ret->name = strdup(input);  // duplicate since input may be from strtok
 
     return ret;
 }
@@ -117,7 +117,10 @@ Hst* parse_hosts(char *input) {
     Hst * ret = NULL;
     Hst * current = NULL;
 
-    char *token = strtok(input, ",");
+    char *input_copy = strdup(input);
+    if (input_copy == NULL) return NULL;
+
+    char *token = strtok(input_copy, ",");
 
     do { 
         void * hst;
@@ -174,6 +177,7 @@ Hst* parse_hosts(char *input) {
 
     } while ((token = strtok(NULL, ",")) != NULL);
 
+    free(input_copy);
     return ret;
 }
 
@@ -181,7 +185,10 @@ Prt* parse_ports(char *input) {
     Prt * first_port = NULL;
     Prt * current = NULL;
 
-    char *token = strtok(input, ",");
+    char *input_copy = strdup(input);
+    if (input_copy == NULL) return NULL;
+
+    char *token = strtok(input_copy, ",");
     while (token != NULL) {
         unsigned int start_port, end_port;
 
@@ -227,6 +234,7 @@ Prt* parse_ports(char *input) {
         current->next = NULL;
     }
 
+    free(input_copy);
     return first_port;
 }
 
@@ -281,6 +289,7 @@ void free_hosts(Hst *host){
         free(host->hst);
     } else if (host->type == HIT_IPHOST) {
         freeaddrinfo(((HstIPHost*)host->hst)->res);
+        free(((HstIPHost*)host->hst)->name);
         free(host->hst);
     }
     free(host);
