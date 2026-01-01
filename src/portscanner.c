@@ -191,6 +191,8 @@ int portscan(char *targetsStr, char *portsStr) {
 
     if (hosts == NULL || ports == NULL) {
         fprintf(stderr, "Couldn't parse ports or hosts\n");
+        if (hosts != NULL) free_hosts(hosts);
+        if (ports != NULL) free_ports(ports);
         return EXIT_FAILURE;
     }
 
