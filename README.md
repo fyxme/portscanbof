@@ -98,3 +98,20 @@ The timeouts have been `#defined` in the portscanner bof. Additionally, the numb
 
 Some OPSEC considerations have been incorporated into the tool. Nevertheless, needs further improvements, test in a Lab environment before using in PROD.
 
+### Considerations
+
+- **SMB enumeration is loud**: Calling `NetWkstaGetInfo` on port 445 generates Windows event logs (Security/System). Future improvement will make this optional via a flag.
+
+- **DNS resolution via `getaddrinfo`**: Hostname lookups use system DNS, which may be logged/monitored. Future improvements will make it an option to skip DNS.
+
+- **Hardcoded timeouts**: The `CONN_TIMEOUT` (100ms) and `READ_TIMEOUT` (500ms) are quite aggressive and may cause detection. Future improvement...
+
+## Future Improvements
+
+- **Randomize port order**: Sequential port scanning is easily fingerprinted by IDS. Shuffling the port order would reduce detection.
+
+- **Add jitter/delays**: Option to add random delays between connection batches to avoid triggering rate-based detection.
+
+- **TCP SYN scanning**: Current `connect()` scan completes the full handshake. Raw sockets (if available) could do SYN scanning for stealth.
+
+- **IPv6 support**: `AF_INET` is hardcoded everywhere. IPv6 targets won't work.
