@@ -33,10 +33,26 @@ HstIPRange* generate_ips_from_cidr(const char *cidr) {
         return NULL;
     }
 
+    if (prefix_len > 32) {
+        fprintf(stderr, "[!] Invalid CIDR prefix length: %u\n", prefix_len);
+        return NULL;
+    }
+
     uint32_t base = ntohl(start_addr.s_addr);
-    uint32_t mask = ~((1 << (32 - prefix_len)) - 1);
+    uint32_t mask, range;
+
+    if (prefix_len == 32) {
+        mask = 0xFFFFFFFF;
+        range = 1;
+    } else if (prefix_len == 0) {
+        mask = 0;
+        range = 0xFFFFFFFF;  // /0 is impractical but avoid UB
+    } else {
+        mask = ~((1U << (32 - prefix_len)) - 1);
+        range = (1U << (32 - prefix_len));
+    }
+
     base &= mask;
-    uint32_t range = (1 << (32 - prefix_len));
 
     struct in_addr end_addr;
     end_addr.s_addr = htonl(base + range - 1);
