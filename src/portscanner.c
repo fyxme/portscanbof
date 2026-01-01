@@ -67,8 +67,8 @@ void connectOrTimeout(SOCKET *sockets, int socket_count) {
             }
         }
 
-        int result = WSAPoll(pollFd, numSockets, READ_TIMEOUT);
-            // Check the revents field for each socket
+        WSAPoll(pollFd, numSockets, READ_TIMEOUT);
+        // Check the revents field for each socket
         for (int i = 0; i < numSockets; i++) {
             if (pollFd[i].fd == INVALID_SOCKET) continue;
 
