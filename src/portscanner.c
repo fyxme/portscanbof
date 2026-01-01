@@ -157,7 +157,7 @@ void testPortsOnIp(char* target, Prt* ports) {
             // create TCP Socket
             SOCKET s = createTCPSocket();
             if (s == INVALID_SOCKET) {
-                // soemthing went wrong
+                // something went wrong
                 printf("[error] while allocating sockets\n");
                 closeAllSockets(sockets, &socket_count);
                 return;
