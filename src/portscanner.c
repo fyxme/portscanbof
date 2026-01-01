@@ -249,6 +249,8 @@ int portscan(char *targetsStr, char *portsStr) {
     free_ports(ports);
 
     WSACleanup();
+
+    return EXIT_SUCCESS;
 }
 
 #ifdef BOF
