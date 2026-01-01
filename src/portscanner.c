@@ -204,6 +204,8 @@ int portscan(char *targetsStr, char *portsStr) {
     err = WSAStartup(wVersionRequested, &wsaData);
     if (err != 0) {
         printf("WSAStartup failed with error: %d\n", err);
+        free_hosts(hosts);
+        free_ports(ports);
         return EXIT_FAILURE;
     }
 
