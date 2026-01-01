@@ -85,7 +85,7 @@ void connectOrTimeout(SOCKET *sockets, int socket_count) {
 
 
             if (pollFd[i].revents & POLLIN) {
-                int bytesRead = recv(sockets[i], buffer, BUFFER_LEN, 0);
+                int bytesRead = recv(sockets[i], buffer, BUFFER_LEN - 1, 0);
                 if (bytesRead > 0) {
                     buffer[bytesRead] = '\0'; // Null-terminate the received data
                 }
